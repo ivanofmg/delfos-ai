@@ -1,0 +1,18 @@
+services:
+  mirofish:
+    build: .
+    container_name: mirofish
+    env_file:
+      - .env
+    restart: unless-stopped
+    volumes:
+      - ./backend/uploads:/app/backend/uploads
+    expose:
+      - "3000"
+      - "5001"
+    networks:
+      - ai-stack_default
+
+networks:
+  ai-stack_default:
+    external: true
