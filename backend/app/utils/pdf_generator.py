@@ -29,7 +29,7 @@ from fpdf import FPDF
 
 # The Report type lives in core/agents/report_agent.py. Backend startup adds
 # the repo root to sys.path, so this import resolves in both dev and prod.
-from core.agents.report_agent import Report, ReportSection
+from ..services.report_agent import Report, ReportSection
 
 
 # ─────────────────────────────────────────────────────────────────
