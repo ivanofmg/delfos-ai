@@ -15,8 +15,13 @@ if sys.platform == 'win32':
     if hasattr(sys.stderr, 'reconfigure'):
         sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
-# Agregar directorio raíz del proyecto al path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Agregar directorios necesarios al path:
+# - backend/ para importar app.*
+# - raíz del repo para importar core.*
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.dirname(backend_dir)
+sys.path.insert(0, backend_dir)
+sys.path.insert(0, repo_root)
 
 from app import create_app
 from app.config import Config

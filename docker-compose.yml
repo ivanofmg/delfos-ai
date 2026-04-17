@@ -12,6 +12,16 @@ services:
       - "5001"
     networks:
       - ai-stack_default
+  services:
+  delfos-api:
+    build: ./backend
+    container_name: delfos-api
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    networks:
+      - ai-stack_default
 
 networks:
   ai-stack_default:
