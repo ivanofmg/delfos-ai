@@ -3,6 +3,7 @@ Rutas de API de reportes
 Provee interfaces para generación, obtención y conversación de reportes de simulación
 """
 
+import io
 import os
 import traceback
 import threading
@@ -393,12 +394,14 @@ def list_reports():
 @report_bp.route('/<report_id>/download', methods=['GET'])
 def download_report(report_id: str):
     """
-    Descargar reporte (formato Markdown o TXT)
+    Descargar reporte (formato Markdown, TXT o PDF)
 
     Parámetros de query:
-        format: 'txt' para descargar como archivo de texto plano (por defecto: 'md')
+        format: 'md' (por defecto), 'txt' o 'pdf'
+            - md/txt: archivo de texto plano con el contenido markdown
+            - pdf:    reporte con branding Delfos AI (portada, contenido, contraportada)
 
-    Retorna archivo Markdown o TXT
+    Retorna archivo Markdown, TXT o PDF
     """
     try:
         report = ReportManager.get_report(report_id)
@@ -410,6 +413,28 @@ def download_report(report_id: str):
             }), 404
 
         fmt = request.args.get('format', 'md').lower()
+
+        # Exportación PDF con branding Delfos AI
+        if fmt == 'pdf':
+            try:
+                from ..utils.pdf_generator import generate_pdf
+                pdf_bytes = generate_pdf(report)
+            except Exception as pdf_err:
+                logger.error(f"Error al generar PDF del reporte {report_id}: {pdf_err}")
+                return jsonify({
+                    "success": False,
+                    "error": f"Error al generar PDF: {pdf_err}",
+                    "traceback": traceback.format_exc()
+                }), 500
+
+            return send_file(
+                io.BytesIO(pdf_bytes),
+                as_attachment=True,
+                download_name=f"Delfos_Report_{report_id}.pdf",
+                mimetype='application/pdf'
+            )
+
+        # Exportación Markdown / TXT (comportamiento original)
         is_txt = fmt == 'txt'
         ext = 'txt' if is_txt else 'md'
         mimetype = 'text/plain'
@@ -438,6 +463,40 @@ def download_report(report_id: str):
         
     except Exception as e:
         logger.error(f"Error al descargar el reporte: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
+
+
+@report_bp.route('/<report_id>/pdf', methods=['GET'])
+def download_report_pdf(report_id: str):
+    """
+    Atajo de descarga directa en PDF con branding Delfos AI.
+    Equivalente a GET /api/report/<report_id>/download?format=pdf
+    """
+    try:
+        report = ReportManager.get_report(report_id)
+
+        if not report:
+            return jsonify({
+                "success": False,
+                "error": f"El reporte no existe: {report_id}"
+            }), 404
+
+        from ..utils.pdf_generator import generate_pdf
+        pdf_bytes = generate_pdf(report)
+
+        return send_file(
+            io.BytesIO(pdf_bytes),
+            as_attachment=True,
+            download_name=f"Delfos_Report_{report_id}.pdf",
+            mimetype='application/pdf'
+        )
+
+    except Exception as e:
+        logger.error(f"Error al generar/descargar PDF del reporte: {str(e)}")
         return jsonify({
             "success": False,
             "error": str(e),
