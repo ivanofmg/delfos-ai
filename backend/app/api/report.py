@@ -1081,3 +1081,99 @@ def get_graph_statistics_tool():
             "error": str(e),
             "traceback": traceback.format_exc()
         }), 500
+
+
+# ============== Devil's Advocate Analysis (Delfos AI) ==============
+
+@report_bp.route('/<report_id>/devils-advocate', methods=['POST'])
+def run_devils_advocate_analysis(report_id: str):
+    """
+    Run Devil's Advocate analysis on an existing report.
+    Uses DeepSeek API to challenge assumptions.
+    
+    Returns:
+        {
+            "success": true,
+            "data": {
+                "report_id": "report_xxxx",
+                "analysis": "markdown text...",
+                "appended_to_report": true
+            }
+        }
+    """
+    try:
+        report = ReportManager.get_report(report_id)
+        
+        if not report:
+            return jsonify({
+                "success": False,
+                "error": f"El reporte no existe: {report_id}"
+            }), 404
+        
+        if report.status != ReportStatus.COMPLETED:
+            return jsonify({
+                "success": False,
+                "error": "El reporte no está completo aún"
+            }), 400
+        
+        if not report.markdown_content:
+            return jsonify({
+                "success": False,
+                "error": "El reporte no tiene contenido"
+            }), 400
+        
+        from ..services.devils_advocate import run_devils_advocate
+        
+        logger.info(f"Running Devil's Advocate on report {report_id}")
+        
+        analysis = run_devils_advocate(
+            simulation_requirement=report.simulation_requirement,
+            report_markdown=report.markdown_content
+        )
+        
+        if analysis and not analysis.startswith("Análisis Devil's Advocate no disponible"):
+            # Append to report
+            da_section = f"\n\n## Análisis Crítico (Devil's Advocate)\n\n{analysis}\n"
+            report.markdown_content += da_section
+            
+            # Add to outline
+            if report.outline:
+                from ..services.report_agent import ReportSection
+                report.outline.sections.append(
+                    ReportSection(
+                        title="Análisis Crítico (Devil's Advocate)",
+                        content=analysis
+                    )
+                )
+            
+            # Save updated report
+            ReportManager.save_report(report)
+            
+            logger.info(f"Devil's Advocate appended to report {report_id}")
+            
+            return jsonify({
+                "success": True,
+                "data": {
+                    "report_id": report_id,
+                    "analysis": analysis,
+                    "appended_to_report": True
+                }
+            })
+        else:
+            return jsonify({
+                "success": True,
+                "data": {
+                    "report_id": report_id,
+                    "analysis": analysis,
+                    "appended_to_report": False,
+                    "reason": "Analysis unavailable or DeepSeek not configured"
+                }
+            })
+    
+    except Exception as e:
+        logger.error(f"Error en Devil's Advocate: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500

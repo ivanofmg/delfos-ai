@@ -137,3 +137,17 @@ class LLMClient:
             logger.error(f"Respuesta completa del LLM: {cleaned_response[:2000]}")
             raise ValueError(f"Formato JSON inválido retornado por LLM: {cleaned_response}")
 
+
+    @classmethod
+    def create_deepseek_client(cls) -> 'LLMClient':
+        """Create an LLMClient configured for DeepSeek API.
+        Used for critical analysis steps (Devil's Advocate).
+        Falls back to default LLM if DeepSeek is not configured."""
+        if not Config.DEEPSEEK_API_KEY:
+            logger.warning("DEEPSEEK_API_KEY not configured, falling back to default LLM")
+            return cls()
+        return cls(
+            api_key=Config.DEEPSEEK_API_KEY,
+            base_url=Config.DEEPSEEK_BASE_URL,
+            model=Config.DEEPSEEK_MODEL
+        )
