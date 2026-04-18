@@ -11,7 +11,7 @@ from flask import request, jsonify, send_file
 
 from . import report_bp
 from ..config import Config
-from ..services.report_agent import ReportAgent, ReportManager, ReportStatus
+from ..services.report_agent import ReportAgent, ReportManager, ReportStatus, ReportSection
 from ..services.simulation_manager import SimulationManager
 from ..models.project import ProjectManager
 from ..models.task import TaskManager, TaskStatus
@@ -151,6 +151,25 @@ def generate_report():
                     progress_callback=progress_callback,
                     report_id=report_id
                 )
+                
+                # Auto-run Devil's Advocate (uses DeepSeek if configured)
+                try:
+                    if report.status == ReportStatus.COMPLETED and report.markdown_content:
+                        task_manager.update_task(task_id, progress=90, message="Running Devil's Advocate analysis...")
+                        from ..services.devils_advocate import run_devils_advocate
+                        da_analysis = run_devils_advocate(
+                            simulation_requirement=simulation_requirement,
+                            report_markdown=report.markdown_content
+                        )
+                        if da_analysis and not da_analysis.startswith("Análisis Devil's Advocate no disponible"):
+                            report.markdown_content += f"\n\n## Análisis Crítico (Devil's Advocate)\n\n{da_analysis}\n"
+                            if report.outline:
+                                report.outline.sections.append(
+                                    ReportSection(title="Análisis Crítico (Devil's Advocate)", content=da_analysis)
+                                )
+                            logger.info("Devil's Advocate auto-appended to report")
+                except Exception as e:
+                    logger.warning(f"Devil's Advocate skipped: {e}")
                 
                 # Guardar reporte
                 ReportManager.save_report(report)
