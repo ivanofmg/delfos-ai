@@ -62,3 +62,6 @@ data/
 
 # PDF smoke test artifacts (keep smoke_pdf.py, ignore generated PDFs)
 scripts/.pdf-smoke/
+.env
+*.env
+!.env.example
