@@ -22,7 +22,7 @@ class Config:
     
     # Configuración de Flask
     SECRET_KEY = os.environ.get('SECRET_KEY', 'mirofish-secret-key')
-    DEBUG = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
+    DEBUG = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     
     # Configuración JSON - deshabilitar escape ASCII para mostrar Unicode directamente
     JSON_AS_ASCII = False
