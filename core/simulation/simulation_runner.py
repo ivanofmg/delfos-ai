@@ -212,7 +212,14 @@ class SimulationRunner:
     # Directorio de scripts
     SCRIPTS_DIR = os.path.join(
         os.path.dirname(__file__),
-        '../../scripts'
+        '../../backend/scripts'
+    )
+    # Python del venv del backend (NO sys.executable: bajo 'uv run' este
+    # apunta al python del sistema sin las dependencias del proyecto)
+    VENV_PYTHON = os.path.join(
+        os.path.dirname(__file__),
+        '../../backend/.venv',
+        'Scripts/python.exe' if sys.platform == 'win32' else 'bin/python'
     )
     
     # Estado de ejecución en memoria
@@ -413,7 +420,7 @@ class SimulationRunner:
             #   simulation.log        - Log del proceso principal
             
             cmd = [
-                sys.executable,  # Intérprete de Python
+                cls.VENV_PYTHON if os.path.exists(cls.VENV_PYTHON) else sys.executable,  # Python del venv (con deps); fallback a sys.executable
                 script_path,
                 "--config", config_path,  # Usando la ruta completa del archivo de configuración
             ]
