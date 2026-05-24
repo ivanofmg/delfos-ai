@@ -1306,7 +1306,7 @@ Retorna la lista de subpreguntas en formato JSON."""
         Returns:
             InterviewResult: Resultado de entrevista
         """
-        from .simulation_runner import SimulationRunner
+        from core.simulation.simulation_runner import SimulationRunner
         
         logger.info(f"InterviewAgents entrevista en profundidad (API real): {interview_requirement[:50]}...")
         
